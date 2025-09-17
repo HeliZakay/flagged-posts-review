@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flagged Posts Review Tool
 
-## Getting Started
+Simple full-stack app for analysts to view, filter, and edit flagged social posts.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 15** (App Router) with **TypeScript**
+- **Route Handlers** for API (no separate backend server)
+- **Tailwind CSS** (minimal styling)
+
+## Quick Start
 
 ```bash
+# Node 18.17+ recommended
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Dataset
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Source of truth: `src/mock-posts.json`
+- Loaded in-memory on server start (no persistence by design)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API Endpoints
 
-## Learn More
+Base path: `/api`
 
-To learn more about Next.js, take a look at the following resources:
+### `GET /posts`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+List posts with filters, search, and pagination.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Query params**
 
-## Deploy on Vercel
+- `status`: `FLAGGED | UNDER_REVIEW | DISMISSED`
+- `platform`: e.g. `twitter`, `instagram`, `facebook`, `tiktok`, `reddit`, `telegram`
+- `tag`: exact tag match (case-insensitive)
+- `search`: text search over `text` (case-insensitive substring)
+- `limit`: 1..100 (default 20)
+- `offset`: 0..n (default 0)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Response**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```json
+{
+  "total": 20,
+  "limit": 10,
+  "offset": 0,
+  "hasMore": true,
+  "nextOffset": 10,
+  "data": [
+    /* Post[] */
+  ]
+}
+```
+
+### `PATCH /posts/:id/status`
+
+Update a post status.
+
+**Body**
+
+```json
+{ "status": "FLAGGED | UNDER_REVIEW | DISMISSED" }
+```
+
+**Response**: updated `Post`.
+
+### `POST /posts/:id/tags`
+
+Add a tag (idempotent: duplicates ignored).
+
+**Body**
+
+```json
+{ "tag": "some-tag" }
+```
+
+**Response**: updated `Post`.
+
+### `DELETE /posts/:id/tags/:tag`
+
+Remove a tag.
+
+**Response**: updated `Post`.
+
+## Frontend Features
+
+- Table with: **Text, Platform, Status, Tags, Created date**
+- Filters: **Status, Platform, Search**, and **Per-page**
+- **Inline status edit** (dropdown → PATCH)
+- **Inline tags**: add (input + “+ Add”) and remove (× button)
+- Pagination: Prev/Next
+- Loading, error, and “No posts found” empty states
+
+## Behavior & Assumptions
+
+- Input dataset normalized: `created_at` → `createdAt` (camelCase).
+- Allowed statuses: `FLAGGED`, `UNDER_REVIEW`, `DISMISSED`.
+- Search is **case-insensitive substring** on `text`.
+- Tag filter is **case-insensitive**; tags stored as provided.
+- Sorting: **createdAt DESC**, tie-break by **id DESC** for stable pagination.
+- No persistence: edits reset on server restart (as required).
+- No auth (per instructions).
+
+## Project Structure
+
+```
+src/
+  app/
+    api/
+      posts/
+        route.ts                 # GET /posts (+filters/search/pagination)
+        [id]/
+          status/route.ts        # PATCH /posts/:id/status
+          tags/
+            route.ts             # POST /posts/:id/tags
+            [tag]/route.ts       # DELETE /posts/:id/tags/:tag
+    page.tsx                      # Home page
+    layout.tsx                    # Minimal app layout
+    globals.css                   # Tailwind v4 import
+  components/
+    PostsView.tsx                 # Frontend table + actions
+  lib/
+    data.ts                       # In-memory repository + types
+  mock-posts.json                 # Dataset
+```
+
+## Example cURL
+
+```bash
+# List flagged instagram posts, 5 per page
+curl "http://localhost:3000/api/posts?status=FLAGGED&platform=instagram&limit=5"
+
+# Search "virus"
+curl "http://localhost:3000/api/posts?search=virus"
+
+# Update status
+curl -X PATCH "http://localhost:3000/api/posts/2/status"   -H "Content-Type: application/json"   -d '{"status":"DISMISSED"}'
+
+# Add tag
+curl -X POST "http://localhost:3000/api/posts/2/tags"   -H "Content-Type: application/json"   -d '{"tag":"reviewed"}'
+
+# Remove tag
+curl -X DELETE "http://localhost:3000/api/posts/2/tags/reviewed"
+```
+
+## Notes / Future Improvements
+
+- Input validation with Zod on route handlers
+- Cursor-based pagination (opaque cursor) for large datasets
+- Unit tests for filter/sort/pagination logic
+- Toast notifications for actions; optimistic updates with rollback
+
+```
+
+```
