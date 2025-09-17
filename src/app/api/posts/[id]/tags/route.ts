@@ -32,10 +32,17 @@ export async function POST(
     );
   }
 
-  const updated = addTag(Number(id), body.tag.trim());
-  if (!updated) {
+  const postId = Number(id);
+  const tag = body.tag.trim();
+  const post = addTag(postId, tag);
+  // Check if post exists
+  const exists = require("@/lib/data").getPosts().some((p: any) => p.id === postId);
+  if (!exists) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
-
-  return NextResponse.json(updated);
+  // If addTag returns null, it's a duplicate
+  if (!post) {
+    return NextResponse.json({ error: "Tag already exists" }, { status: 409 });
+  }
+  return NextResponse.json(post);
 }

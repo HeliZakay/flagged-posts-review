@@ -50,9 +50,11 @@ export function updatePostStatus(id: number, status: string): Post | null {
 export function addTag(id: number, tag: string): Post | null {
   const post = allPosts.find((p) => p.id === id);
   if (!post) return null;
-  if (!post.tags.includes(tag)) {
-    post.tags.push(tag);
+  if (post.tags.includes(tag)) {
+    // Duplicate tag: do not add, return null
+    return null;
   }
+  post.tags.push(tag);
   return post;
 }
 
