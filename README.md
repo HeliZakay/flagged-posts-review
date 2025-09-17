@@ -4,8 +4,8 @@ Simple full-stack app for analysts to view, filter, and edit flagged social post
 
 ## Tech Stack
 
-- **Next.js 15** (App Router) with **TypeScript**
-- **Route Handlers** for API (no separate backend server)
+- **Express** (TypeScript) backend API
+- **React** (TypeScript) frontend
 - **Tailwind CSS** (minimal styling)
 
 ## Quick Start
@@ -28,6 +28,7 @@ cd express-backend
 npm run dev
 # In a separate terminal, start frontend (port 3000)
 cd ..
+# (If you have a React frontend, start it here)
 npm run dev
 # open http://localhost:3000
 ```
@@ -127,23 +128,19 @@ Remove a tag.
 
 ```
 src/
-  app/
-    api/
-      posts/
-        route.ts                 # GET /posts (+filters/search/pagination)
-        [id]/
-          status/route.ts        # PATCH /posts/:id/status
-          tags/
-            route.ts             # POST /posts/:id/tags
-            [tag]/route.ts       # DELETE /posts/:id/tags/:tag
-    page.tsx                      # Home page
-    layout.tsx                    # Minimal app layout
-    globals.css                   # Tailwind v4 import
   components/
     PostsView.tsx                 # Frontend table + actions
   lib/
     data.ts                       # In-memory repository + types
   mock-posts.json                 # Dataset
+express-backend/
+  src/
+    routes/
+      posts.ts                    # Express API endpoints
+    data.ts                       # In-memory repository + types
+    server.ts                     # Express server entrypoint
+  package.json
+  README.md
 ```
 
 ## Example cURL
@@ -167,7 +164,7 @@ curl -X DELETE "http://localhost:3000/api/posts/2/tags/reviewed"
 
 ## Notes / Future Improvements
 
-- Input validation with Zod on route handlers
+- Input validation with Zod on Express API
 - Cursor-based pagination (opaque cursor) for large datasets
 - Unit tests for filter/sort/pagination logic
 - Toast notifications for actions; optimistic updates with rollback
