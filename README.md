@@ -79,11 +79,9 @@ List posts with filters, search, and pagination.
 
 Update a post status.
 
-**Body**
-
-```json
 { "status": "FLAGGED | UNDER_REVIEW | DISMISSED" }
-```
+
+````
 
 **Response**: updated `Post`.
 
@@ -95,7 +93,7 @@ Add a tag (idempotent: duplicates ignored).
 
 ```json
 { "tag": "some-tag" }
-```
+````
 
 **Response**: updated `Post`.
 
@@ -114,17 +112,29 @@ Remove a tag.
 - Pagination: Prev/Next
 - Loading, error, and “No posts found” empty states
 
-## Behavior & Assumptions
+## Automated Testing & Coverage
 
-- Input dataset normalized: `created_at` → `createdAt` (camelCase).
-- Allowed statuses: `FLAGGED`, `UNDER_REVIEW`, `DISMISSED`.
-- Search is **case-insensitive substring** on `text`.
-- Tag filter is **case-insensitive**; tags stored as provided.
+Backend tests are implemented using Jest and Supertest. To run backend tests:
+
+```bash
+cd express-backend
+npx jest --coverage
+```
+
+### Coverage Summary (Backend)
+
+| Metric     | Coverage |
+| ---------- | -------- |
+| Statements | 76.99%   |
+| Branches   | 56.14%   |
+| Functions  | 73.68%   |
+| Lines      | 84.53%   |
+
+> Last generated: September 17, 2025
+
 - Sorting: **createdAt DESC**, tie-break by **id DESC** for stable pagination.
 - No persistence: edits reset on server restart (as required).
 - No auth (per instructions).
-
-## Project Structure
 
 ```
 src/
