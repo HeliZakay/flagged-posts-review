@@ -22,7 +22,7 @@ export type Post = {
 };
 
 // Keep the dataset in memory
-let allPosts: Post[] = (posts as RawPost[]).map((p) => {
+const allPosts: Post[] = (posts as RawPost[]).map((p) => {
   const { created_at, ...rest } = p; // pull out created_at
   return { ...rest, createdAt: created_at }; // rebuild without it
 });
