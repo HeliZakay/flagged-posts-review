@@ -27,6 +27,9 @@ export default function PostsView() {
   const [limit, setLimit] = useState<number>(10);
   const [offset, setOffset] = useState<number>(0);
   const [newTag, setNewTag] = useState<Record<number, string>>({});
+  const [tagError, setTagError] = useState<Record<number, string>>({});
+  const [tagLoading, setTagLoading] = useState<Record<number, boolean>>({});
+  const [statusLoading, setStatusLoading] = useState<Record<number, boolean>>({});
 
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState<ApiResponse | null>(null);
@@ -61,63 +64,82 @@ export default function PostsView() {
   }, [status, platform, search, limit]);
 
   async function updateStatus(id: number, next: Post["status"]) {
-    const res = await fetch(`/api/posts/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: next }),
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`PATCH failed: ${res.status}`);
-    const updated: Post = await res.json();
-
-    // Update local table state so UI reflects change immediately
-    setResp((prev) =>
-      prev
-        ? {
-            ...prev,
-            data: prev.data.map((p) => (p.id === id ? updated : p)),
-          }
-        : prev
-    );
+    setStatusLoading((loading) => ({ ...loading, [id]: true }));
+    try {
+      const res = await fetch(`/api/posts/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`PATCH failed: ${res.status}`);
+      const updated: Post = await res.json();
+      setResp((prev) =>
+        prev
+          ? {
+              ...prev,
+              data: prev.data.map((p) => (p.id === id ? updated : p)),
+            }
+          : prev
+      );
+    } finally {
+      setStatusLoading((loading) => ({ ...loading, [id]: false }));
+    }
   }
   async function addTagToPost(id: number, tag: string) {
     const t = tag.trim();
     if (!t) return;
-    const res = await fetch(`/api/posts/${id}/tags`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tag: t }),
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error(`POST failed: ${res.status}`);
-    const updated: Post = await res.json();
-
-    // update just this row
-    setResp((prev) =>
-      prev
-        ? { ...prev, data: prev.data.map((p) => (p.id === id ? updated : p)) }
-        : prev
-    );
-    // clear the input for this row
-    setNewTag((s) => ({ ...s, [id]: "" }));
+    setTagError((errs) => ({ ...errs, [id]: "" }));
+    setTagLoading((loading) => ({ ...loading, [id]: true }));
+    try {
+      const res = await fetch(`/api/posts/${id}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tag: t }),
+        cache: "no-store",
+      });
+      if (res.status === 409) {
+        setTagError((errs) => ({ ...errs, [id]: "Tag already exists." }));
+        return;
+      }
+      if (!res.ok) {
+        setTagError((errs) => ({ ...errs, [id]: `Error: ${res.status}` }));
+        return;
+      }
+      const updated: Post = await res.json();
+      setResp((prev) =>
+        prev
+          ? { ...prev, data: prev.data.map((p) => (p.id === id ? updated : p)) }
+          : prev
+      );
+      setNewTag((s) => ({ ...s, [id]: "" }));
+      setTagError((errs) => ({ ...errs, [id]: "" }));
+    } finally {
+      setTagLoading((loading) => ({ ...loading, [id]: false }));
+    }
   }
   async function removeTagFromPost(id: number, tag: string) {
-    await fetch(`/api/posts/${id}/tags/${encodeURIComponent(tag)}`, {
-      method: "DELETE",
-    });
-    // optimistic update
-    setResp((prev) =>
-      prev
-        ? {
-            ...prev,
-            data: prev.data.map((post) =>
-              post.id === id
-                ? { ...post, tags: post.tags.filter((t) => t !== tag) }
-                : post
-            ),
-          }
-        : prev
-    );
+    setTagLoading((loading) => ({ ...loading, [id]: true }));
+    try {
+      await fetch(`/api/posts/${id}/tags/${encodeURIComponent(tag)}`, {
+        method: "DELETE",
+      });
+      // optimistic update
+      setResp((prev) =>
+        prev
+          ? {
+              ...prev,
+              data: prev.data.map((post) =>
+                post.id === id
+                  ? { ...post, tags: post.tags.filter((t) => t !== tag) }
+                  : post
+              ),
+            }
+          : prev
+      );
+    } finally {
+      setTagLoading((loading) => ({ ...loading, [id]: false }));
+    }
   }
 
   return (
@@ -213,22 +235,30 @@ export default function PostsView() {
                       </td>
                       <td className="p-2 align-top">{p.platform}</td>
                       <td className="p-2 align-top">
-                        <select
-                          className="border rounded px-2 py-1 text-xs"
-                          value={p.status}
-                          onChange={async (e) => {
-                            const next = e.target.value as Post["status"];
-                            try {
-                              await updateStatus(p.id, next);
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                        >
-                          <option value="FLAGGED">FLAGGED</option>
-                          <option value="UNDER_REVIEW">UNDER_REVIEW</option>
-                          <option value="DISMISSED">DISMISSED</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="border rounded px-2 py-1 text-xs"
+                            value={p.status}
+                            onChange={async (e) => {
+                              const next = e.target.value as Post["status"];
+                              if (!statusLoading[p.id]) {
+                                try {
+                                  await updateStatus(p.id, next);
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }
+                            }}
+                            disabled={statusLoading[p.id]}
+                          >
+                            <option value="FLAGGED">FLAGGED</option>
+                            <option value="UNDER_REVIEW">UNDER_REVIEW</option>
+                            <option value="DISMISSED">DISMISSED</option>
+                          </select>
+                          {statusLoading[p.id] && (
+                            <span className="text-xs text-gray-500">Updating…</span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-2 align-top">
                         <div className="flex flex-wrap gap-1 mb-2">
@@ -256,31 +286,40 @@ export default function PostsView() {
                         </div>
 
                         {/* Add tag inline */}
-                        <div className="flex items-center gap-2">
-                          <input
-                            className="border rounded px-2 py-0.5 text-xs"
-                            placeholder="Add tag…"
-                            value={newTag[p.id] ?? ""}
-                            onChange={(e) =>
-                              setNewTag((s) => ({
-                                ...s,
-                                [p.id]: e.target.value,
-                              }))
-                            }
-                            onKeyDown={async (e) => {
-                              if (e.key === "Enter") {
-                                await addTagToPost(p.id, newTag[p.id] ?? "");
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <input
+                              className="border rounded px-2 py-0.5 text-xs"
+                              placeholder="Add tag…"
+                              value={newTag[p.id] ?? ""}
+                              onChange={(e) =>
+                                setNewTag((s) => ({
+                                  ...s,
+                                  [p.id]: e.target.value,
+                                }))
                               }
-                            }}
-                          />
-                          <button
-                            className="border rounded px-2 py-0.5 text-xs"
-                            onClick={async () => {
-                              await addTagToPost(p.id, newTag[p.id] ?? "");
-                            }}
-                          >
-                            + Add
-                          </button>
+                              onKeyDown={async (e) => {
+                                if (e.key === "Enter" && !tagLoading[p.id]) {
+                                  await addTagToPost(p.id, newTag[p.id] ?? "");
+                                }
+                              }}
+                              disabled={tagLoading[p.id]}
+                            />
+                            <button
+                              className="border rounded px-2 py-0.5 text-xs"
+                              onClick={async () => {
+                                if (!tagLoading[p.id]) {
+                                  await addTagToPost(p.id, newTag[p.id] ?? "");
+                                }
+                              }}
+                              disabled={tagLoading[p.id]}
+                            >
+                              {tagLoading[p.id] ? "Adding…" : "+ Add"}
+                            </button>
+                          </div>
+                          {tagError[p.id] && (
+                            <div className="text-xs text-red-600">{tagError[p.id]}</div>
+                          )}
                         </div>
                       </td>
 
