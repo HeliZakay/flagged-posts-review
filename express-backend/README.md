@@ -30,6 +30,9 @@ Base path: `/api/posts`
 - Data is loaded in-memory from `src/mock-posts.json` on server start. No persistence: changes are lost on server restart (per assignment requirements).
 - CORS is enabled for local frontend development.
 
+- **Input validation:** All API endpoints validate request parameters and bodies using [Zod](https://zod.dev/). Invalid `status`, `tag`, or `id` values return clear error responses with proper HTTP status codes.
+- **Error handling:** Consistent error messages and status codes for invalid input, missing resources, and duplicate tags.
+
 ## Project Structure
 
 ```
