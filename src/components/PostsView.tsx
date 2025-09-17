@@ -28,7 +28,7 @@ export default function PostsView() {
     setLoading(true);
     setError(null);
     try {
-  const res = await fetch(`${API_BASE_URL}/posts?${query}`);
+      const res = await fetch(`${API_BASE_URL}/posts?${query}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: ApiResponse = await res.json();
       setResp(json);
@@ -68,7 +68,7 @@ export default function PostsView() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-  fetch(`${API_BASE_URL}/posts?${query}`)
+    fetch(`${API_BASE_URL}/posts?${query}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -84,7 +84,7 @@ export default function PostsView() {
   }, [status, platform, search, limit]);
 
   async function updateStatus(id: number, next: Post["status"]) {
-  const res = await fetch(`${API_BASE_URL}/posts/${id}/status`, {
+    const res = await fetch(`${API_BASE_URL}/posts/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: next }),
@@ -97,7 +97,7 @@ export default function PostsView() {
   async function addTagToPost(id: number, tag: string) {
     const t = tag.trim();
     if (!t) return;
-  const res = await fetch(`${API_BASE_URL}/posts/${id}/tags`, {
+    const res = await fetch(`${API_BASE_URL}/posts/${id}/tags`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tag: t }),
@@ -109,7 +109,7 @@ export default function PostsView() {
     setNewTag((s) => ({ ...s, [id]: "" }));
   }
   async function removeTagFromPost(id: number, tag: string) {
-  await fetch(`${API_BASE_URL}/posts/${id}/tags/${encodeURIComponent(tag)}`, {
+    await fetch(`${API_BASE_URL}/posts/${id}/tags/${encodeURIComponent(tag)}`, {
       method: "DELETE",
     });
     await refetchPosts();
@@ -118,7 +118,7 @@ export default function PostsView() {
   return (
     <div className="mt-6">
       {/* Filters */}
-  <div className="flex flex-wrap gap-3 items-end">
+      <div className="flex flex-wrap gap-3 items-end">
         <div>
           <label className="block text-xs text-gray-500">Tag</label>
           <select
@@ -130,7 +130,9 @@ export default function PostsView() {
             {Array.from(new Set((mockPosts as any[]).flatMap((p) => p.tags)))
               .filter((t) => t)
               .map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
           </select>
         </div>

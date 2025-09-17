@@ -26,10 +26,12 @@ Base path: `/api/posts`
 - `DELETE /api/posts/:id/tags/:tag` — Remove a tag from a post
 
 ## Notes
+
 - Data is loaded in-memory from `src/mock-posts.json` on server start. No persistence: changes are lost on server restart (per assignment requirements).
 - CORS is enabled for local frontend development.
 
 ## Project Structure
+
 ```
 express-backend/
   src/

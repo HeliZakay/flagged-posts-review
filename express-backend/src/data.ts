@@ -27,23 +27,23 @@ export function getPosts(): Post[] {
 }
 
 export function updatePostStatus(id: number, status: string): Post | null {
-  const post = allPosts.find(p => p.id === id);
+  const post = allPosts.find((p) => p.id === id);
   if (!post) return null;
   post.status = status;
   return post;
 }
 
 export function addTag(id: number, tag: string): Post | null {
-  const post = allPosts.find(p => p.id === id);
+  const post = allPosts.find((p) => p.id === id);
   if (!post || post.tags.includes(tag)) return null;
   post.tags.push(tag);
   return post;
 }
 
 export function removeTag(id: number, tag: string): Post | null {
-  const post = allPosts.find(p => p.id === id);
+  const post = allPosts.find((p) => p.id === id);
   if (!post) return null;
-  post.tags = post.tags.filter(t => t !== tag);
+  post.tags = post.tags.filter((t) => t !== tag);
   return post;
 }
 

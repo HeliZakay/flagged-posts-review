@@ -11,6 +11,7 @@ Simple full-stack app for analysts to view, filter, and edit flagged social post
 ## Quick Start
 
 ### 1. Install dependencies (root and backend)
+
 ```bash
 # In project root
 npm install
@@ -20,6 +21,7 @@ npm install
 ```
 
 ### 2. Run both servers
+
 ```bash
 # Start Express backend (port 4000)
 cd express-backend
@@ -31,6 +33,7 @@ npm run dev
 ```
 
 ### 3. API integration
+
 Frontend fetches data from Express backend at `http://localhost:4000/api/posts`.
 You can switch API base URL in `src/lib/apiConfig.ts`.
 
