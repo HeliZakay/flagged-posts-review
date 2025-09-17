@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { API_BASE_URL } from "@/lib/apiConfig";
+import mockPosts from "@/mock-posts.json";
 
 type Post = {
   id: number;
@@ -26,7 +28,7 @@ export default function PostsView() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/posts?${query}`);
+  const res = await fetch(`${API_BASE_URL}/posts?${query}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: ApiResponse = await res.json();
       setResp(json);
@@ -42,6 +44,7 @@ export default function PostsView() {
   }
   const [status, setStatus] = useState<string>("");
   const [platform, setPlatform] = useState<string>("");
+  const [tag, setTag] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [limit, setLimit] = useState<number>(10);
   const [offset, setOffset] = useState<number>(0);
@@ -55,16 +58,17 @@ export default function PostsView() {
     const p = new URLSearchParams();
     if (status) p.set("status", status);
     if (platform) p.set("platform", platform);
+    if (tag) p.set("tag", tag);
     if (search) p.set("search", search);
     p.set("limit", String(limit));
     p.set("offset", String(offset));
     return p.toString();
-  }, [status, platform, search, limit, offset]);
+  }, [status, platform, tag, search, limit, offset]);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/api/posts?${query}`)
+  fetch(`${API_BASE_URL}/posts?${query}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -80,7 +84,7 @@ export default function PostsView() {
   }, [status, platform, search, limit]);
 
   async function updateStatus(id: number, next: Post["status"]) {
-    const res = await fetch(`/api/posts/${id}/status`, {
+  const res = await fetch(`${API_BASE_URL}/posts/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: next }),
@@ -93,7 +97,7 @@ export default function PostsView() {
   async function addTagToPost(id: number, tag: string) {
     const t = tag.trim();
     if (!t) return;
-    const res = await fetch(`/api/posts/${id}/tags`, {
+  const res = await fetch(`${API_BASE_URL}/posts/${id}/tags`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tag: t }),
@@ -105,7 +109,7 @@ export default function PostsView() {
     setNewTag((s) => ({ ...s, [id]: "" }));
   }
   async function removeTagFromPost(id: number, tag: string) {
-    await fetch(`/api/posts/${id}/tags/${encodeURIComponent(tag)}`, {
+  await fetch(`${API_BASE_URL}/posts/${id}/tags/${encodeURIComponent(tag)}`, {
       method: "DELETE",
     });
     await refetchPosts();
@@ -114,7 +118,22 @@ export default function PostsView() {
   return (
     <div className="mt-6">
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-end">
+  <div className="flex flex-wrap gap-3 items-end">
+        <div>
+          <label className="block text-xs text-gray-500">Tag</label>
+          <select
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            className="border rounded px-2 py-1"
+          >
+            <option value="">All</option>
+            {Array.from(new Set((mockPosts as any[]).flatMap((p) => p.tags)))
+              .filter((t) => t)
+              .map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+          </select>
+        </div>
         <div>
           <label className="block text-xs text-gray-500">Status</label>
           <select
