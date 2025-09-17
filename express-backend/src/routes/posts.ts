@@ -5,7 +5,6 @@ import {
   addTag,
   removeTag,
   loadPosts,
-  Post,
 } from "../data";
 import { z } from "zod";
 
@@ -35,11 +34,11 @@ router.get("/", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid limit or offset" });
   }
 
-  if (status) posts = posts.filter((p: Post) => p.status === status);
-  if (platform) posts = posts.filter((p: Post) => p.platform === platform);
-  if (tag) posts = posts.filter((p: Post) => p.tags.includes(String(tag)));
+  if (status) posts = posts.filter((p) => p.status === status);
+  if (platform) posts = posts.filter((p) => p.platform === platform);
+  if (tag) posts = posts.filter((p) => p.tags.includes(String(tag)));
   if (search)
-    posts = posts.filter((p: Post) =>
+    posts = posts.filter((p) =>
       p.text.toLowerCase().includes(String(search).toLowerCase())
     );
 
