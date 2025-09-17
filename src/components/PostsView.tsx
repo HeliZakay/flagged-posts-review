@@ -21,6 +21,25 @@ type ApiResponse = {
 };
 
 export default function PostsView() {
+  // Helper to refetch posts
+  async function refetchPosts() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/posts?${query}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json: ApiResponse = await res.json();
+      setResp(json);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
   const [status, setStatus] = useState<string>("");
   const [platform, setPlatform] = useState<string>("");
   const [search, setSearch] = useState<string>("");
@@ -68,17 +87,8 @@ export default function PostsView() {
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`PATCH failed: ${res.status}`);
-    const updated: Post = await res.json();
-
-    // Update local table state so UI reflects change immediately
-    setResp((prev) =>
-      prev
-        ? {
-            ...prev,
-            data: prev.data.map((p) => (p.id === id ? updated : p)),
-          }
-        : prev
-    );
+    await res.json();
+    await refetchPosts();
   }
   async function addTagToPost(id: number, tag: string) {
     const t = tag.trim();
@@ -90,34 +100,15 @@ export default function PostsView() {
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`POST failed: ${res.status}`);
-    const updated: Post = await res.json();
-
-    // update just this row
-    setResp((prev) =>
-      prev
-        ? { ...prev, data: prev.data.map((p) => (p.id === id ? updated : p)) }
-        : prev
-    );
-    // clear the input for this row
+    await res.json();
+    await refetchPosts();
     setNewTag((s) => ({ ...s, [id]: "" }));
   }
   async function removeTagFromPost(id: number, tag: string) {
     await fetch(`/api/posts/${id}/tags/${encodeURIComponent(tag)}`, {
       method: "DELETE",
     });
-    // optimistic update
-    setResp((prev) =>
-      prev
-        ? {
-            ...prev,
-            data: prev.data.map((post) =>
-              post.id === id
-                ? { ...post, tags: post.tags.filter((t) => t !== tag) }
-                : post
-            ),
-          }
-        : prev
-    );
+    await refetchPosts();
   }
 
   return (

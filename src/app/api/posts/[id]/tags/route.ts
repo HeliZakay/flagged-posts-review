@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addTag } from "@/lib/data";
+import { addTag, getPosts, Post } from "@/lib/data";
 
 function hasStringProp<T extends string>(
   obj: unknown,
@@ -36,7 +36,7 @@ export async function POST(
   const tag = body.tag.trim();
   const post = addTag(postId, tag);
   // Check if post exists
-  const exists = require("@/lib/data").getPosts().some((p: any) => p.id === postId);
+  const exists = getPosts().some((p: Post) => p.id === postId);
   if (!exists) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }

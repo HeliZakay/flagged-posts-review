@@ -22,6 +22,7 @@ export type Post = {
 };
 
 // Keep the dataset in memory
+console.log('Initializing allPosts at', new Date().toISOString());
 const allPosts: Post[] = (posts as RawPost[]).map((p) => {
   const { created_at, ...rest } = p; // pull out created_at
   return { ...rest, createdAt: created_at }; // rebuild without it
@@ -41,6 +42,7 @@ export function updatePostStatus(id: number, status: string): Post | null {
   const post = allPosts.find((p) => p.id === id);
   if (!post) return null;
   post.status = status;
+  console.log(`Status updated for post ${id} to ${status} at`, new Date().toISOString());
   return post;
 }
 
@@ -55,6 +57,7 @@ export function addTag(id: number, tag: string): Post | null {
     return null;
   }
   post.tags.push(tag);
+  console.log(`Tag '${tag}' added to post ${id} at`, new Date().toISOString());
   return post;
 }
 
@@ -65,5 +68,6 @@ export function removeTag(id: number, tag: string): Post | null {
   const post = allPosts.find((p) => p.id === id);
   if (!post) return null;
   post.tags = post.tags.filter((t) => t !== tag);
+  console.log(`Tag '${tag}' removed from post ${id} at`, new Date().toISOString());
   return post;
 }
